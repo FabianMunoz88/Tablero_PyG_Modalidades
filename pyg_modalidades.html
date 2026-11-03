@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tablero P&L por Modalidad – UNIMINUTO</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+:root{--navy:#051C2C;--blue:#2251FF;--cyan:#00A9F4;--gris:#5E6E7E;--linea:#D0D5DB;--suave:#F5F6F8;--pos:#2251FF;--neg:#D0021B}
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#fff;color:var(--navy);font-size:13px}
+header{background:#fff;color:var(--navy);padding:22px 32px 14px;border-bottom:1px solid var(--navy)}
+header h1{margin:0;font-family:Georgia,'Times New Roman',serif;font-weight:normal;font-size:26px;letter-spacing:-.2px}
+header p{margin:6px 0 0;color:var(--gris);font-size:12px}
+main{max-width:1400px;margin:0 auto;padding:20px 32px 40px}
+.cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:24px;margin-bottom:28px}
+.card{background:#fff;border-radius:0;box-shadow:none;padding:12px 0 0;border-top:2px solid}
+.card h3{margin:0 0 10px;font-family:Georgia,serif;font-weight:normal;font-size:16px;text-transform:none;letter-spacing:0}
+.kpi{display:flex;justify-content:space-between;align-items:baseline;gap:8px;padding:6px 0;border-bottom:1px solid #EEF0F3;font-size:11px;font-weight:bold;color:var(--gris);text-transform:uppercase;letter-spacing:.3px}
+.kpi b{font-family:Georgia,serif;font-weight:normal;font-size:20px;color:var(--navy);text-transform:none;font-variant-numeric:tabular-nums}
+.kpi small{font-size:11px;font-weight:bold;text-transform:none}
+.pos{color:var(--pos)}.neg{color:var(--neg)}
+.tabs{display:flex;gap:0;flex-wrap:wrap;margin-bottom:20px;border-bottom:1px solid var(--linea)}
+.tabs button{border:none;border-bottom:3px solid transparent;background:transparent;color:var(--gris);padding:12px 16px 9px;border-radius:0;cursor:pointer;font-size:13px;font-family:Arial,sans-serif}
+.tabs button:hover{color:var(--navy)} .tabs button.active{background:transparent;color:var(--navy);font-weight:bold;border-bottom-color:var(--blue)}
+.panel{display:none}.panel.active{display:block}
+.box{background:#fff;border-radius:0;box-shadow:none;border-top:1px solid var(--navy);padding:12px 0 8px;margin-bottom:28px;overflow-x:auto}
+.box h2{margin:0 0 12px;font-family:Georgia,serif;font-weight:normal;font-size:16px;color:var(--navy)}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:28px 32px}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:28px 32px}
+.chartwrap{position:relative;height:300px}
+table{border-collapse:collapse;width:100%;font-size:12px;min-width:1000px;font-variant-numeric:tabular-nums}
+th,td{padding:5px 8px;text-align:right;white-space:nowrap}
+th:first-child,td:first-child{text-align:left;position:sticky;left:0;background:#fff;min-width:260px}
+thead tr.g th{color:#fff;text-align:center;font-family:Georgia,serif;font-weight:normal;font-size:12.5px;padding:8px}
+thead tr.s th{background:#fff;color:var(--navy);font-weight:bold;font-size:11px;text-align:center;border-bottom:2px solid var(--navy)}
+thead tr.s th:first-child{text-align:left}
+tbody tr{border-bottom:1px solid #EEF0F3;color:#33475B}
+tbody tr.bold td{font-weight:bold;color:var(--navy);border-top:1px solid var(--navy)}
+tbody tr.ebitda td{background:#F0F3FA;border-bottom:1px solid var(--navy)}
+tbody tr.pct td{font-style:italic;color:var(--gris)}
+td.ind{padding-left:24px}
+td.var{background:var(--suave);font-weight:bold}
+td.sep,th.sep{border-right:2px solid var(--navy)}
+.note{font-size:11px;color:var(--gris);margin-top:8px;border-top:1px solid #E3E6EA;padding-top:10px}
+footer{text-align:center;font-size:11px;color:var(--gris);padding:10px;border-top:1px solid #E3E6EA}
+@media(max-width:1000px){.cards,.grid2,.grid3{grid-template-columns:1fr}}
+.msgs{background:var(--suave);border-left:4px solid var(--blue);padding:12px 18px;margin-bottom:24px}
+.msgs h3{margin:0 0 6px;font-family:Georgia,serif;font-weight:normal;font-size:16px;color:var(--navy)} .msgs ul{margin:0;padding-left:18px} .msgs li{margin:4px 0;line-height:1.45;color:#33475B} .msgs b{color:var(--navy)}
+.tabbar{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;border-bottom:1px solid var(--linea);margin-bottom:20px} .tabbar .tabs{border-bottom:none;margin-bottom:0}
+#xls{background:var(--navy);color:#fff;border:none;padding:8px 14px;font-size:12px;font-weight:bold;cursor:pointer;margin-bottom:6px;font-family:Arial,sans-serif} #xls:hover{background:var(--blue)}
+</style>
+</head>
+<body>
+<header>
+<h1>Tablero P&amp;L por Modalidad – UNIMINUTO</h1>
+<p>Acumulado 2026 vs 2025 · Cifras en millones de COP · Var.: positivo = favorable (márgenes en puntos porcentuales)</p>
+</header>
+<main>
+<div id="msgs"></div><div class="cards" id="cards"></div>
+<div class="tabbar"><div class="tabs" id="tabs"></div><button id="xls" onclick="descargar()">&#11015; Descargar a Excel</button></div>
+<div id="panels"></div>
+<p class="note">Bloques: (1) resultado propio de cada modalidad; (2) ingresos, deducciones, costos y gastos de las sedes distribuidos por drivers (Virtual con sus propios); (3) Servicios Corporativos distribuidos por drivers entre las tres modalidades.</p>
+</main>
+<footer>Fuente: hoja "Tablero Modalidades" (Prueba automatización · 2025 YTD - PPT)</footer>
+<script>
+const S = [
+{"title":"Resumen – Cascada de EBITDA por modalidad","rows":[
+{"label":"EBITDA Programas","indent":false,"pct":false,"v":[940963520,882586159,661,825180616,823879521,16,1759923008,1457063088,2079,3526067144,3163528768,1146]},
+{"label":"(+/-) Asignación Overhead Rectorías","indent":false,"pct":false,"v":[-605005495,-565183725,-705,-627996794,-585767432,-721,-1434651988,-1157649224,-2393,-2667654277,-2308600381,-1555]},
+{"label":"EBITDA Programas + Overhead","indent":false,"pct":false,"v":[335958025,317402434,585,197183822,238112089,-1719,325271020,299413864,864,858412867,854928387,41]},
+{"label":"(+/-) Asignación Servicios Corporativos","indent":false,"pct":false,"v":[-275376201,-292313862,579,-218964566,-219119054,7,-216289922,-151000717,-4324,-710630689,-662433633,-728]},
+{"label":"EBITDA UMD","indent":false,"pct":false,"v":[60581824,25088571,14147,-21780744,18993035,-21468,108981098,148413147,-2657,147782178,192494754,-2323]},
+{"label":"Margen EBITDA UMD %","indent":true,"pct":true,"v":[357,154,20334,-125,112,-23738,1011,1729,-71870,328,460,-13224]}
+]},
+{"title":"1. P&L Programas – resultado propio de cada modalidad","rows":[
+{"label":"Ingreso Bruto","indent":false,"pct":false,"v":[2362398738,2166503824,904,2288699828,2159420066,599,2573010199,1962971547,3108,7224108766,6288895436,1487]},
+{"label":"Inversión Social","indent":false,"pct":false,"v":[-834805297,-678281901,-2308,-686803136,-567545144,-2101,-786697145,-500316352,-5724,-2308305578,-1746143397,-3219]},
+{"label":"Ingreso Neto","indent":false,"pct":false,"v":[1527593442,1488221923,265,1601896692,1591874922,63,1786313054,1462655195,2213,4915803188,4542752039,821]},
+{"label":"Costos","indent":false,"pct":false,"v":[-574221214,-584293883,172,-749703567,-720865490,-400,-26390046,-5592107,-37192,-1350314827,-1310751480,-302]},
+{"label":"Costo Directo Personal","indent":true,"pct":false,"v":[-485954792,-476019299,-209,-620220083,-586963063,-567,-25195424,-4239309,-49433,-1131370299,-1067221672,-601]},
+{"label":"Costo Indirecto Personal","indent":true,"pct":false,"v":[-59830481,-63447449,570,-58844459,-53472423,-1005,-862639,-87370,-88734,-119537579,-117007242,-216]},
+{"label":"Otros costos","indent":true,"pct":false,"v":[-28435940,-44827136,3657,-70639025,-80430004,1217,-331983,-1265428,7377,-99406948,-126522567,2143]},
+{"label":"Utilidad (Pérdida) Bruta","indent":false,"pct":false,"v":[953372228,903928040,547,852193125,871009431,-216,1759923008,1457063088,2079,3565488361,3232000559,1032]},
+{"label":"Margen Bruto %","indent":true,"pct":true,"v":[6241,6074,16713,5320,5472,-15169,9852,9962,-10950,7253,7115,13848]},
+{"label":"Gastos","indent":false,"pct":false,"v":[-12408708,-21341881,4186,-27012509,-47129910,4268,0,0,0,-39421217,-68471791,4243]},
+{"label":"Gasto Admon. Personal","indent":true,"pct":false,"v":[-420058,-2035,0,-172336,-732,0,0,0,0,-592394,-2766,0]},
+{"label":"Gasto Ventas Personal","indent":true,"pct":false,"v":[0,0,0,-10143,0,0,0,0,0,-10143,0,0]},
+{"label":"Otros Gastos","indent":true,"pct":false,"v":[-11988650,-21339846,4382,-26830029,-47129178,4307,0,0,0,-38818680,-68469025,4330]},
+{"label":"EBITDA","indent":false,"pct":false,"v":[940963520,882586159,661,825180616,823879521,16,1759923008,1457063088,2079,3526067144,3163528768,1146]},
+{"label":"Margen EBITDA %","indent":true,"pct":true,"v":[6160,5930,22930,5151,5176,-2426,9852,9962,-10950,7173,6964,20902]}
+]},
+{"title":"2. P&L Programas + Overhead Rectorías (asignación de sedes por drivers)","rows":[
+{"label":"Ingreso Bruto","indent":false,"pct":false,"v":[2457881702,2262380271,864,2364709464,2227988939,614,1464106078,1089911068,3433,6286697244,5580280277,1266]},
+{"label":"Inversión Social","indent":false,"pct":false,"v":[-835980224,-679287082,-2307,-687738442,-567611538,-2116,-444766430,-256472268,-7342,-1968485096,-1503370888,-3094]},
+{"label":"Ingreso Neto","indent":false,"pct":false,"v":[1621901479,1583093188,245,1676971022,1660377401,100,1019339648,833438800,2231,4318212149,4076909389,592]},
+{"label":"Costos","indent":false,"pct":false,"v":[-1018247499,-999548395,-187,-1185070088,-1113624842,-642,-371400431,-299538097,-2399,-2574718018,-2412711334,-671]},
+{"label":"Costo Directo Personal","indent":true,"pct":false,"v":[-552416343,-540396329,-222,-673127095,-629105533,-700,-163699781,-124777872,-3119,-1389243219,-1294279734,-734]},
+{"label":"Costo Indirecto Personal","indent":true,"pct":false,"v":[-236683968,-237299781,26,-199629460,-180566257,-1056,-98002805,-80932834,-2109,-534316234,-498798873,-712]},
+{"label":"Otros costos","indent":true,"pct":false,"v":[-229147187,-221852285,-329,-312313533,-303953052,-275,-109697844,-93827390,-1691,-651158565,-619632727,-509]},
+{"label":"Utilidad (Pérdida) Bruta","indent":false,"pct":false,"v":[603653980,583544793,345,491900934,546752559,-1003,647939217,533900703,2136,1743494131,1664198055,476]},
+{"label":"Margen Bruto %","indent":true,"pct":true,"v":[3722,3686,3579,2933,3293,-35967,6356,6406,-4954,4038,4082,-4447]},
+{"label":"Gastos","indent":false,"pct":false,"v":[-267695955,-266142360,-58,-294717112,-308640470,451,-322668197,-234486839,-3761,-885081264,-809269668,-937]},
+{"label":"Gasto Admon. Personal","indent":true,"pct":false,"v":[-97278512,-100240450,295,-101742055,-108110641,589,-36672876,-36308145,-100,-235693443,-244659235,366]},
+{"label":"Gasto Ventas Personal","indent":true,"pct":false,"v":[-47993421,-41662220,-1520,-50337998,-44563948,-1296,-68485769,-51678421,-3252,-166817188,-137904589,-2097]},
+{"label":"Otros Gastos","indent":true,"pct":false,"v":[-122424023,-124239689,146,-142637058,-155965881,855,-217509553,-146500273,-4847,-482570633,-426705844,-1309]},
+{"label":"EBITDA","indent":false,"pct":false,"v":[335958025,317402434,585,197183822,238112089,-1719,325271020,299413864,864,858412867,854928387,41]},
+{"label":"Margen EBITDA %","indent":true,"pct":true,"v":[2071,2005,6643,1176,1434,-25825,3191,3593,-40151,1988,2097,-10911]}
+]},
+{"title":"3. P&L UMD – incluye Servicios Corporativos (asignación por drivers)","rows":[
+{"label":"Ingreso Bruto","indent":false,"pct":false,"v":[2532300075,2319632790,917,2424200572,2271602118,672,1522266962,1118785535,3606,6478767610,5710020443,1346]},
+{"label":"Inversión Social","indent":false,"pct":false,"v":[-835980224,-688383229,-2144,-687738442,-574945373,-1962,-444096430,-260655101,-7038,-1967815096,-1523983703,-2912]},
+{"label":"Ingreso Neto","indent":false,"pct":false,"v":[1696319851,1631249561,399,1736462130,1696656745,235,1078170533,858130434,2564,4510952514,4186036740,776]},
+{"label":"Costos","indent":false,"pct":false,"v":[-1176743608,-1137825546,-342,-1311241688,-1220556644,-743,-506103858,-367679558,-3765,-2994089154,-2726061748,-983]},
+{"label":"Costo Directo Personal","indent":true,"pct":false,"v":[-557842843,-543648963,-261,-677446886,-636508412,-643,-163464558,-121493167,-3455,-1398754287,-1301650542,-746]},
+{"label":"Costo Indirecto Personal","indent":true,"pct":false,"v":[-270955349,-275827520,177,-226911360,-209061668,-854,-124635653,-101217550,-2314,-622502363,-586106737,-621]},
+{"label":"Otros costos","indent":true,"pct":false,"v":[-347945416,-318349063,-930,-406883441,-374986564,-851,-218003647,-144968841,-5038,-972832505,-838304468,-1605]},
+{"label":"Utilidad (Pérdida) Bruta","indent":false,"pct":false,"v":[519576243,493424015,530,425220442,476100102,-1069,572066674,490450876,1664,1516863360,1459974992,390]},
+{"label":"Margen Bruto %","indent":true,"pct":true,"v":[3063,3025,3814,2449,2806,-35733,5306,5715,-40944,3363,3488,-12510]},
+{"label":"Gastos","indent":false,"pct":false,"v":[-458994419,-468335444,199,-447001186,-457107066,221,-463085576,-342037729,-3539,-1369081182,-1267480239,-802]},
+{"label":"Gasto Admon. Personal","indent":true,"pct":false,"v":[-186184800,-187203268,54,-172516339,-170929578,-93,-108030340,-83613187,-2920,-466731478,-441746033,-566]},
+{"label":"Gasto Ventas Personal","indent":true,"pct":false,"v":[-73663457,-70569051,-438,-70772756,-65741084,-765,-89086021,-67100341,-3277,-233522234,-203410477,-1480]},
+{"label":"Otros Gastos","indent":true,"pct":false,"v":[-199146163,-210563124,542,-203712092,-220436405,759,-265969215,-191324201,-3901,-668827470,-622323729,-747]},
+{"label":"EBITDA","indent":false,"pct":false,"v":[60581824,25088571,14147,-21780744,18993035,-21468,108981098,148413147,-2657,147782178,192494754,-2323]},
+{"label":"Margen EBITDA %","indent":true,"pct":true,"v":[357,154,20334,-125,112,-23738,1011,1729,-71870,328,460,-13224]}
+]},
+{"title":"4. Matrículas e indicadores por estudiante (P&L UMD · miles de COP por matrícula)","rows":[
+{"label":"Matrículas","indent":false,"pct":false,"v":[884230000,922500000,-415,653300000,659440000,-93,684890000,532100000,2871,2222420000,2114040000,513]},
+{"label":"Participación en matrículas %","indent":true,"pct":true,"v":[3979,4364,-38500,2940,3119,-17975,3082,2517,56475,10000,10000,0]},
+{"label":"Ingreso Bruto por estudiante","indent":false,"pct":false,"v":[28638477,25145071,1389,37107004,34447442,772,22226445,21025851,571,29151860,27009992,793]},
+{"label":"Inversión Social por estudiante","indent":false,"pct":false,"v":[-9454330,-7462149,-2670,-10527146,-8718691,-2074,-6484201,-4898611,-3237,-8854380,-7208869,-2283]},
+{"label":"Ingreso Neto por estudiante","indent":false,"pct":false,"v":[19184147,17682922,849,26579858,25728751,331,15742244,16127240,-239,20297480,19801124,251]},
+{"label":"Costos por estudiante","indent":false,"pct":false,"v":[-13308117,-12334152,-790,-20071050,-18508987,-844,-7389564,-6909971,-694,-13472202,-12895034,-448]},
+{"label":"Costo Directo Personal por estudiante","indent":true,"pct":false,"v":[-6308798,-5893214,-705,-10369614,-9652257,-743,-2386727,-2283277,-453,-6293834,-6157171,-222]},
+{"label":"Gastos por estudiante","indent":false,"pct":false,"v":[-5190894,-5076807,-225,-6842204,-6931746,129,-6761459,-6428072,-519,-6160317,-5995536,-275]},
+{"label":"EBITDA UMD por estudiante","indent":false,"pct":false,"v":[685136,271963,15192,-333396,288018,-21576,1591220,2789197,-4295,664961,910554,-2697]},
+{"label":"EBITDA Programas por estudiante","indent":false,"pct":false,"v":[10641615,9567330,1123,12630960,12493624,110,25696433,27383257,-616,15865890,14964375,602]}
+]}
+];
+S.forEach(s=>s.rows.forEach(r=>{r.v=r.v.map(x=>x/10000);}));
+const MODS=["Distancia","Presencial","Virtual","Total"];
+const COL={Distancia:"#2251FF",Presencial:"#00A9F4",Virtual:"#051C2C",Total:"#5E6E7E"};
+const nf=new Intl.NumberFormat("es-CO",{maximumFractionDigits:0});
+const pf=new Intl.NumberFormat("es-CO",{minimumFractionDigits:1,maximumFractionDigits:1});
+const fN=v=>Math.abs(v)<0.5?"-":(v<0?"("+nf.format(-v)+")":nf.format(v));
+const fP=v=>Math.abs(v)<0.0005?"-":(v<0?"("+pf.format(-v*100)+"%)":pf.format(v*100)+"%");
+const fPP=v=>Math.abs(v)<0.05?"-":(v>0?"+":"")+pf.format(v)+" pp";
+const cls=v=>v>0.00001?"pos":(v<-0.00001?"neg":"");
+const get=(sec,label)=>S[sec].rows.find(r=>r.label===label).v;
+// KPI cards (P&L UMD)
+const ebU=get(0,"EBITDA UMD"), mgU=get(0,"Margen EBITDA UMD %"), inU=get(3,"Ingreso Neto");
+document.getElementById("cards").innerHTML=MODS.map((m,i)=>`
+<div class="card" style="border-color:${COL[m]}"><h3 style="color:${COL[m]}">${m}</h3>
+<div class="kpi">Ingreso Neto UMD <span><b>${fN(inU[i*3])}</b> <small class="${cls(inU[i*3+2])}">${fP(inU[i*3+2])}</small></span></div>
+<div class="kpi">EBITDA UMD <span><b>${fN(ebU[i*3])}</b> <small class="${cls(ebU[i*3+2])}">${fP(ebU[i*3+2])}</small></span></div>
+<div class="kpi">Margen EBITDA <span><b>${fP(mgU[i*3])}</b> <small class="${cls(mgU[i*3+2])}">${fPP(mgU[i*3+2])}</small></span></div>
+<div class="kpi">Matrículas <span><b>${fN(get(4,"Matrículas")[i*3])}</b> <small class="${cls(get(4,"Matrículas")[i*3+2])}">${fP(get(4,"Matrículas")[i*3+2])}</small></span></div><div class="kpi">2025: EBITDA ${fN(ebU[i*3+1])} · Margen ${fP(mgU[i*3+1])}</div></div>`).join("");
+function table(sec){
+const s=S[sec];
+let h=`<table><thead><tr class="g"><th style="background:#fff"></th>`+MODS.map(m=>`<th colspan="3" style="background:${COL[m]}">${m}</th>`).join("")+`</tr>
+<tr class="s"><th>Concepto</th>`+MODS.map((m,i)=>`<th>2026</th><th>2025</th><th class="${i<3?'sep':''}">Var.</th>`).join("")+`</tr></thead><tbody>`;
+const boldSet=["Ingreso Neto","Utilidad (Pérdida) Bruta","EBITDA","EBITDA Programas + Overhead","EBITDA UMD"];
+s.rows.forEach(r=>{
+const c=[]; if(boldSet.includes(r.label))c.push("bold"); if(r.label.startsWith("EBITDA UMD")||r.label==="EBITDA")c.push("ebitda"); if(r.pct)c.push("pct");
+if(sec>0 && (r.label==="Costos"||r.label==="Gastos")) c.push("sub");
+h+=`<tr class="${c.join(" ")}"><td class="${r.indent?'ind':''}"${(r.label==="Costos"||r.label==="Gastos"||r.label==="EBITDA Programas")?' style="font-weight:700"':''}>${r.label}</td>`;
+for(let i=0;i<4;i++){const a=r.v[i*3],b=r.v[i*3+1],v=r.v[i*3+2];
+h+= r.pct?`<td>${fP(a)}</td><td>${fP(b)}</td><td class="var ${cls(v)} ${i<3?'sep':''}">${fPP(v)}</td>`
+:`<td>${fN(a)}</td><td>${fN(b)}</td><td class="var ${cls(v)} ${i<3?'sep':''}">${fP(v)}</td>`;}
+h+="</tr>";});
+return h+"</tbody></table>";
+}
+// Indicadores clave (mix, eficiencia, asignaciones)
+const dv=(a,b)=>b?a/b:0;const G3=l=>get(3,l),G0=l=>get(0,l);
+const IN=G3("Ingreso Neto"),IB=G3("Ingreso Bruto"),IS=G3("Inversión Social"),CO=G3("Costos"),GA=G3("Gastos"),CDP=G3("Costo Directo Personal"),CIP=G3("Costo Indirecto Personal"),GAP=G3("Gasto Admon. Personal"),GVP=G3("Gasto Ventas Personal"),EB3=G3("EBITDA");
+const EP=G0("EBITDA Programas"),OV=G0("(+/-) Asignación Overhead Rectorías"),SCo=G0("(+/-) Asignación Servicios Corporativos"),EU=G0("EBITDA UMD");
+const ser=f=>{const v=[];for(let i=0;i<4;i++)v.push(f(i,0),f(i,1),0);return v;};const ix=(a,i,k)=>a[i*3+k];
+const rA=(label,f,o)=>{const v=ser(f);for(let i=0;i<4;i++)v[i*3+2]=v[i*3+1]?v[i*3]/v[i*3+1]-1:0;return Object.assign({label:label,v:v,pct:false},o||{});};
+const rP=(label,f,o)=>{const v=ser(f);for(let i=0;i<4;i++)v[i*3+2]=(v[i*3]-v[i*3+1])*100;return Object.assign({label:label,v:v,pct:true},o||{});};
+const MIX=[rA("Ingreso Neto UMD",(i,k)=>ix(IN,i,k),{bold:1}),rP("Participación en el Ingreso Neto",(i,k)=>dv(ix(IN,i,k),ix(IN,3,k)),{ind:1}),rA("Ingreso Bruto UMD",(i,k)=>ix(IB,i,k),{bold:1}),rP("Participación en el Ingreso Bruto",(i,k)=>dv(ix(IB,i,k),ix(IB,3,k)),{ind:1})];
+const PER=(i,k)=>ix(CDP,i,k)+ix(CIP,i,k)+ix(GAP,i,k)+ix(GVP,i,k);
+const EFI=[rP("Inversión Social / Ingreso Bruto",(i,k)=>dv(-ix(IS,i,k),ix(IB,i,k)),{inv:1}),rP("Personal / Ingreso Neto",(i,k)=>dv(-PER(i,k),ix(IN,i,k)),{inv:1}),rP("Costos / Ingreso Neto",(i,k)=>dv(-ix(CO,i,k),ix(IN,i,k)),{inv:1}),rP("Gastos / Ingreso Neto",(i,k)=>dv(-ix(GA,i,k),ix(IN,i,k)),{inv:1}),rP("Costos y Gastos / Ingreso Neto",(i,k)=>dv(-(ix(CO,i,k)+ix(GA,i,k)),ix(IN,i,k)),{inv:1,bold:1}),rP("Margen EBITDA UMD",(i,k)=>dv(ix(EB3,i,k),ix(IN,i,k)),{eb:1,bold:1})];
+const ASG=[rA("EBITDA Programas",(i,k)=>ix(EP,i,k),{bold:1}),rA("(+/-) Asignación Overhead Rectorías",(i,k)=>ix(OV,i,k),{inv:1}),rP("Participación en el Overhead total",(i,k)=>dv(ix(OV,i,k),ix(OV,3,k)),{ind:1}),rA("(+/-) Asignación Servicios Corporativos",(i,k)=>ix(SCo,i,k),{inv:1}),rP("Participación en Servicios Corporativos",(i,k)=>dv(ix(SCo,i,k),ix(SCo,3,k)),{ind:1}),rA("Total asignado",(i,k)=>ix(OV,i,k)+ix(SCo,i,k),{bold:1,inv:1}),rP("Total asignado / Ingreso Neto UMD",(i,k)=>dv(-(ix(OV,i,k)+ix(SCo,i,k)),ix(IN,i,k)),{inv:1}),rP("Total asignado / EBITDA Programas",(i,k)=>dv(-(ix(OV,i,k)+ix(SCo,i,k)),ix(EP,i,k)),{inv:1}),rA("EBITDA UMD",(i,k)=>ix(EU,i,k),{eb:1,bold:1})];
+function tbl(rows){let h=`<table><thead><tr class="g"><th style="background:#fff"></th>`+MODS.map(m=>`<th colspan="3" style="background:${COL[m]}">${m}</th>`).join("")+`</tr><tr class="s"><th>Concepto</th>`+MODS.map((m,i)=>`<th>2026</th><th>2025</th><th class="${i<3?'sep':''}">Var.</th>`).join("")+`</tr></thead><tbody>`;rows.forEach(r=>{const c=[];if(r.bold)c.push("bold");if(r.eb)c.push("ebitda");if(r.pct)c.push("pct");h+=`<tr class="${c.join(" ")}"><td class="${r.ind?'ind':''}">${r.label}</td>`;for(let i=0;i<4;i++){const a=r.v[i*3],b=r.v[i*3+1],v=r.v[i*3+2],cv=r.inv?-v:v;h+=r.pct?`<td>${fP(a)}</td><td>${fP(b)}</td><td class="var ${cls(cv)} ${i<3?'sep':''}">${fPP(v)}</td>`:`<td>${fN(a)}</td><td>${fN(b)}</td><td class="var ${cls(cv)} ${i<3?'sep':''}">${fP(v)}</td>`;}h+="</tr>";});return h+"</tbody></table>";}
+function indPanel(){return `<div class="panel" id="p4"><div class="box"><h2>Mix de ingresos por modalidad (P&amp;L UMD)</h2>${tbl(MIX)}</div><div class="grid2"><div class="box"><h2>Participación en el Ingreso Neto 2026</h2><div class="chartwrap"><canvas id="mx26"></canvas></div></div><div class="box"><h2>Participación en el Ingreso Neto 2025</h2><div class="chartwrap"><canvas id="mx25"></canvas></div></div></div><div class="box"><h2>Indicadores de eficiencia por modalidad (P&amp;L UMD)</h2>${tbl(EFI)}<p class="note">En los indicadores de costo, un aumento es desfavorable y se muestra en rojo.</p></div><div class="box"><h2>Transparencia de las asignaciones: Overhead Rectorías y Servicios Corporativos</h2>${tbl(ASG)}<p class="note">Monto que recibe cada modalidad y su participación en el total asignado. Los drivers de distribución se detallan en la hoja Tabla drivers del modelo.</p></div><div class="box"><h2>Asignaciones por modalidad 2026: del EBITDA Programas al EBITDA UMD</h2><div class="chartwrap"><canvas id="asgc"></canvas></div></div></div>`;}
+function indCharts(){if(!window.Chart)return;const M3=["Distancia","Presencial","Virtual"];const dn=(id,k)=>new Chart(document.getElementById(id),{type:"doughnut",data:{labels:M3,datasets:[{data:M3.map((m,i)=>ix(IN,i,k)),backgroundColor:M3.map(m=>COL[m]),borderColor:"#fff",borderWidth:2}]},options:{maintainAspectRatio:false,cutout:"60%",plugins:{legend:{position:"bottom"},tooltip:{callbacks:{label:c=>c.label+": "+fN(c.raw)+" ("+fP(dv(c.raw,ix(IN,3,k)))+")"}}}}});dn("mx26",0);dn("mx25",1);new Chart(document.getElementById("asgc"),{type:"bar",data:{labels:M3,datasets:[{label:"EBITDA Programas",data:M3.map((m,i)=>ix(EP,i,0)),backgroundColor:"#A2AAAD"},{label:"Overhead Rectorías",data:M3.map((m,i)=>ix(OV,i,0)),backgroundColor:"#D0021B"},{label:"Servicios Corporativos",data:M3.map((m,i)=>ix(SCo,i,0)),backgroundColor:"#F28B95"},{label:"EBITDA UMD",data:M3.map((m,i)=>ix(EU,i,0)),backgroundColor:"#051C2C"}]},options:{maintainAspectRatio:false,plugins:{legend:{position:"bottom"},tooltip:{callbacks:{label:c=>c.dataset.label+": "+fN(c.raw)}}},scales:{y:{ticks:{callback:v=>nf.format(v)}}}}});}
+function mensajes(){const M3=["Distancia","Presencial","Virtual"],o=[];const gr=i=>dv(ix(IN,i,0),ix(IN,i,1))-1;const best=[0,1,2].sort((a,b)=>gr(b)-gr(a))[0];o.push(`El <b>Ingreso Neto UMD</b> total ${gr(3)>=0?"crece":"cae"} <b>${fP(Math.abs(gr(3)))}</b> frente a 2025; <b>${M3[best]}</b> es la modalidad que más crece (${fP(gr(best))}).`);const m0=dv(ix(EU,3,0),ix(IN,3,0)),m1=dv(ix(EU,3,1),ix(IN,3,1));o.push(`El <b>EBITDA UMD</b> total es <b>${fN(ix(EU,3,0))}</b>, con una variación de ${fP(dv(ix(EU,3,0),ix(EU,3,1))-1)} frente a 2025 y un margen de ${fP(m0)} (${fPP((m0-m1)*100)}).`);const ng=[0,1,2].filter(i=>ix(EU,i,0)<0);if(ng.length)ng.forEach(i=>o.push(`<b>${M3[i]}</b> cierra con <b>EBITDA UMD negativo de ${fN(ix(EU,i,0))}</b> después de asignaciones; su EBITDA de Programas es ${fN(ix(EP,i,0))} y recibe ${fN(-(ix(OV,i,0)+ix(SCo,i,0)))} en asignaciones.`));else o.push(`Las tres modalidades cierran con <b>EBITDA UMD positivo</b> después de asignaciones.`);const ds=[0,1,2].map(i=>(dv(ix(IN,i,0),ix(IN,3,0))-dv(ix(IN,i,1),ix(IN,3,1)))*100);const mx=[0,1,2].sort((a,b)=>Math.abs(ds[b])-Math.abs(ds[a]))[0];o.push(`En el mix de ingresos, <b>${M3[mx]}</b> ${ds[mx]>=0?"gana":"pierde"} <b>${pf.format(Math.abs(ds[mx]))} pp</b> de participación y representa el ${fP(dv(ix(IN,mx,0),ix(IN,3,0)))} del Ingreso Neto 2026.`);document.getElementById("msgs").innerHTML='<div class="msgs"><h3>Mensajes clave</h3><ul>'+o.map(x=>"<li>"+x+"</li>").join("")+'</ul></div>';}
+mensajes();
+function matPanel(){const M3=["Distancia","Presencial","Virtual"],MT=get(4,"Matrículas"),EE=get(4,"EBITDA UMD por estudiante");const up=[0,1,2].sort((a,b)=>MT[b*3+2]-MT[a*3+2])[0],ee=[0,1,2].sort((a,b)=>EE[b*3]-EE[a*3])[0];const msg=`Las matrículas totales ${MT[11]>=0?"crecen":"caen"} <b>${fP(Math.abs(MT[11]))}</b> (${fN(MT[9])} vs ${fN(MT[10])}); <b>${M3[up]}</b> es la modalidad con mayor variación (${fP(MT[up*3+2])}). <b>${M3[ee]}</b> genera el mayor EBITDA UMD por estudiante (${fN(EE[ee*3])} mil COP).`;return `<div class="panel" id="p5"><div class="box"><h2>${S[4].title}</h2>${table(4)}<p class="note">${msg}</p></div><div class="grid3"><div class="box"><h2>Matrículas: 2026 vs 2025</h2><div class="chartwrap"><canvas id="mt1"></canvas></div></div><div class="box"><h2>Participación en matrículas vs Ingreso Neto UMD 2026</h2><div class="chartwrap"><canvas id="mt2"></canvas></div></div><div class="box"><h2>EBITDA UMD por estudiante (miles COP)</h2><div class="chartwrap"><canvas id="mt3"></canvas></div></div></div><div class="box"><h2>Economía por estudiante 2026 (miles COP)</h2><div class="chartwrap"><canvas id="mt4"></canvas></div></div></div>`;}function matCharts(){if(!window.Chart)return;const M3=["Distancia","Presencial","Virtual"],g=l=>get(4,l),MT=g("Matrículas"),PM=g("Participación en matrículas %"),EE=g("EBITDA UMD por estudiante"),NE=g("Ingreso Neto por estudiante"),CE=g("Costos por estudiante"),GE=g("Gastos por estudiante"),IN3=get(3,"Ingreso Neto");const pc=v=>pf.format(v)+"%";const o=f=>({maintainAspectRatio:false,plugins:{legend:{position:"bottom"},tooltip:{callbacks:{label:c=>c.dataset.label+": "+f(c.raw)}}},scales:{y:{ticks:{callback:v=>f(v)}}}});const yr=(A,f)=>({type:"bar",data:{labels:M3,datasets:[{label:"2026",data:[0,1,2].map(i=>A[i*3]),backgroundColor:"#051C2C"},{label:"2025",data:[0,1,2].map(i=>A[i*3+1]),backgroundColor:"#A2AAAD"}]},options:o(f)});new Chart(document.getElementById("mt1"),yr(MT,fN));new Chart(document.getElementById("mt2"),{type:"bar",data:{labels:M3,datasets:[{label:"% Matrículas",data:[0,1,2].map(i=>PM[i*3]*100),backgroundColor:"#00A9F4"},{label:"% Ingreso Neto UMD",data:[0,1,2].map(i=>IN3[9]?IN3[i*3]/IN3[9]*100:0),backgroundColor:"#2251FF"}]},options:o(pc)});new Chart(document.getElementById("mt3"),yr(EE,fN));new Chart(document.getElementById("mt4"),{type:"bar",data:{labels:M3,datasets:[{label:"Ingreso Neto",data:[0,1,2].map(i=>NE[i*3]),backgroundColor:"#2251FF"},{label:"Costos",data:[0,1,2].map(i=>CE[i*3]),backgroundColor:"#E5546C"},{label:"Gastos",data:[0,1,2].map(i=>GE[i*3]),backgroundColor:"#F3A712"},{label:"EBITDA UMD",data:[0,1,2].map(i=>EE[i*3]),backgroundColor:"#051C2C"}]},options:o(fN)});}
+const tabsDef=[["Resumen",0],["1. P&L Programas",1],["2. Programas + Overhead",2],["3. P&L UMD (incl. SC)",3],["4. Indicadores clave",4],["5. Matrículas y unitarios",5]];
+document.getElementById("tabs").innerHTML=tabsDef.map((t,i)=>`<button class="${i==0?'active':''}" data-i="${i}">${t[0]}</button>`).join("");
+let ph=`<div class="panel active" id="p0">
+<div class="box"><h2>${S[0].title}</h2>${table(0)}</div>
+<div class="grid3">${["Distancia","Presencial","Virtual"].map((m,i)=>`<div class="box"><h2>Cascada EBITDA 2026 – ${m}</h2><div class="chartwrap"><canvas id="wf${i}"></canvas></div></div>`).join("")}</div>
+<div class="grid2"><div class="box"><h2>EBITDA UMD: 2026 vs 2025</h2><div class="chartwrap"><canvas id="c1"></canvas></div></div>
+<div class="box"><h2>Margen EBITDA 2026 por nivel</h2><div class="chartwrap"><canvas id="c2"></canvas></div></div></div></div>`;
+for(let k=1;k<4;k++) ph+=`<div class="panel" id="p${k}"><div class="box"><h2>${S[k].title}</h2>${table(k)}</div></div>`;
+ph+=indPanel();ph+=matPanel();
+document.getElementById("panels").innerHTML=ph;
+document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>{
+document.querySelectorAll(".tabs button").forEach(x=>x.classList.remove("active"));b.classList.add("active");
+document.querySelectorAll(".panel").forEach(p=>p.classList.remove("active"));document.getElementById("p"+b.dataset.i).classList.add("active");});
+const b4=document.querySelector('.tabs button[data-i="4"]');if(b4)b4.addEventListener("click",()=>{if(!window._ind){window._ind=1;setTimeout(indCharts,50);}});const b5=document.querySelector('.tabs button[data-i="5"]');if(b5)b5.addEventListener("click",()=>{if(!window._mat){window._mat=1;setTimeout(matCharts,50);}});
+if(window.Chart){
+Chart.defaults.font.family='Arial,Helvetica,sans-serif';Chart.defaults.font.size=11;Chart.defaults.color='#5E6E7E';Chart.defaults.borderColor='#E8ECF2';
+const tick={callback:v=>nf.format(v)};
+// waterfalls
+const lbl=["EBITDA Programas","Overhead Rectorías","Serv. Corporativos","EBITDA UMD"];
+["Distancia","Presencial","Virtual"].forEach((m,i)=>{
+const p=get(0,"EBITDA Programas")[i*3], o=get(0,"(+/-) Asignación Overhead Rectorías")[i*3], sc=get(0,"(+/-) Asignación Servicios Corporativos")[i*3], u=get(0,"EBITDA UMD")[i*3];
+const d=[[0,p],[p,p+o],[p+o,p+o+sc],[0,u]];
+new Chart(document.getElementById("wf"+i),{type:"bar",data:{labels:lbl,datasets:[{data:d,
+backgroundColor:[COL[m],"#D0021B","#D0021B",u>=0?"#2251FF":"#D0021B"]}]},
+options:{maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fN(c.raw[1]-c.raw[0])}}},scales:{y:{ticks:tick}}}});
+});
+new Chart(document.getElementById("c1"),{type:"bar",data:{labels:["Distancia","Presencial","Virtual"],datasets:[
+{label:"2026",data:[0,1,2].map(i=>ebU[i*3]),backgroundColor:"#051C2C"},
+{label:"2025",data:[0,1,2].map(i=>ebU[i*3+1]),backgroundColor:"#A2AAAD"}]},
+options:{maintainAspectRatio:false,plugins:{legend:{position:"bottom"},tooltip:{callbacks:{label:c=>c.dataset.label+": "+fN(c.raw)}}},scales:{y:{ticks:tick}}}});
+const lv=[["Programas",get(1,"Margen EBITDA %")],["Prog. + Overhead",get(2,"Margen EBITDA %")],["UMD (incl. SC)",get(3,"Margen EBITDA %")]];
+new Chart(document.getElementById("c2"),{type:"bar",data:{labels:lv.map(x=>x[0]),datasets:["Distancia","Presencial","Virtual"].map((m,i)=>({label:m,data:lv.map(x=>x[1][i*3]*100),backgroundColor:COL[m]}))},
+options:{maintainAspectRatio:false,plugins:{legend:{position:"bottom"},tooltip:{callbacks:{label:c=>c.dataset.label+": "+pf.format(c.raw)+"%"}}},scales:{y:{ticks:{callback:v=>v+"%"}}}}});
+}
+function zipArchivos(fs){const enc=new TextEncoder();const CT=[];for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;CT[n]=c>>>0;}const crc=b=>{let c=0xFFFFFFFF;for(let i=0;i<b.length;i++)c=CT[(c^b[i])&255]^(c>>>8);return (c^0xFFFFFFFF)>>>0;};const parts=[],cen=[];let off=0;fs.forEach(([n,d])=>{const nb=enc.encode(n),db=enc.encode(d),c=crc(db);const h=new DataView(new ArrayBuffer(30));h.setUint32(0,0x04034b50,true);h.setUint16(4,20,true);h.setUint16(6,0x0800,true);h.setUint16(12,0x21,true);h.setUint32(14,c,true);h.setUint32(18,db.length,true);h.setUint32(22,db.length,true);h.setUint16(26,nb.length,true);parts.push(new Uint8Array(h.buffer),nb,db);const e=new DataView(new ArrayBuffer(46));e.setUint32(0,0x02014b50,true);e.setUint16(4,20,true);e.setUint16(6,20,true);e.setUint16(8,0x0800,true);e.setUint16(14,0x21,true);e.setUint32(16,c,true);e.setUint32(20,db.length,true);e.setUint32(24,db.length,true);e.setUint16(28,nb.length,true);e.setUint32(42,off,true);cen.push(new Uint8Array(e.buffer),nb);off+=30+nb.length+db.length;});const cs=cen.reduce((a,b)=>a+b.length,0);const z=new DataView(new ArrayBuffer(22));z.setUint32(0,0x06054b50,true);z.setUint16(8,fs.length,true);z.setUint16(10,fs.length,true);z.setUint32(12,cs,true);z.setUint32(16,off,true);const all=parts.concat(cen,[new Uint8Array(z.buffer)]);const tot=all.reduce((a,b)=>a+b.length,0);const out=new Uint8Array(tot);let p=0;all.forEach(b=>{out.set(b,p);p+=b.length;});return out;}
+function xlsxModalidades(){const P=document.querySelector(".panel.active");if(!P)return null;const X=v=>String(v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");const pn=s=>{s=String(s).replace(/\u00a0/g," ").trim();if(s==="")return null;if(s==="-")return {n:0,f:"n"};const pp=/pp$/.test(s);let x=s.replace(/pp$/,"").trim();const neg=/^\(.*\)$/.test(x)||/^-/.test(x);x=x.replace(/[()\s+]/g,"").replace(/^-/,"");const p=/%$/.test(x);x=x.replace("%","").replace(/\./g,"").replace(",",".");if(!/^\d+(\.\d+)?$/.test(x))return null;let v=+x;if(p)v=v/100;if(neg)v=-v;return {n:v,f:pp?"pp":(p?"p":"n")};};const FILL={"#2251FF":5,"#00A9F4":6,"#051C2C":7,"#5E6E7E":8};const rows=[],mg=[];let nc=1;const hp=document.querySelector("header p");const tb0=document.querySelector(".tabs button.active");rows.push([{v:document.querySelector("header h1").textContent,s:1}]);rows.push([{v:hp?hp.textContent:"",s:2}]);rows.push([{v:"Pestaña: "+(tb0?tb0.textContent:""),s:2}]);rows.push([]);P.querySelectorAll(".box").forEach(bx=>{const tb=bx.querySelector("table");if(!tb)return;const h2=bx.querySelector("h2");rows.push([{v:h2?h2.textContent:"",s:3}]);tb.querySelectorAll("tr").forEach(tr=>{const head=tr.parentNode.tagName==="THEAD";const g=tr.classList.contains("g");const k=tr.classList.contains("ebitda")?2:(tr.classList.contains("bold")?1:0);const rn=rows.length+1;const r=[];let ci=0;tr.querySelectorAll("th,td").forEach(c=>{const cs=+c.getAttribute("colspan")||1;const tx=c.textContent.replace(/\u00a0/g," ").trim();let cell;if(head){if(g){const bg=(c.getAttribute("style")||"").match(/#[0-9A-Fa-f]{6}/);const st=bg&&FILL[bg[0].toUpperCase()]?FILL[bg[0].toUpperCase()]:0;cell={v:tx,s:st};for(let j=1;j<cs;j++)r[ci+j]={v:"",s:st};if(cs>1)mg.push([rn,ci,ci+cs-1]);}else cell={v:tx,s:ci===0?10:9};}else if(ci===0){cell={v:tx,s:(c.classList.contains("ind")&&k===0)?23:[11,15,19][k]};}else{const q=pn(tx);const b=[12,16,20][k];cell=q?{n:q.n,s:b+(q.f==="p"?1:(q.f==="pp"?2:0))}:{v:tx,s:b};}r[ci]=cell;ci+=cs;});nc=Math.max(nc,r.length);rows.push(r);});rows.push([]);});if(rows.length<6)return null;const CL=n=>{let s="";n++;while(n>0){const m=(n-1)%26;s=String.fromCharCode(65+m)+s;n=Math.floor((n-1)/26);}return s;};let sd="";rows.forEach((r,i)=>{const rn=i+1;sd+='<row r="'+rn+'"'+(rn===1?' ht="24" customHeight="1"':'')+'>';r.forEach((c,j)=>{if(!c)return;const ref=CL(j)+rn;if(c.n!=null)sd+='<c r="'+ref+'" s="'+c.s+'"><v>'+c.n+'</v></c>';else if(c.v!=="")sd+='<c r="'+ref+'" s="'+c.s+'" t="inlineStr"><is><t xml:space="preserve">'+X(c.v)+'</t></is></c>';else sd+='<c r="'+ref+'" s="'+c.s+'"/>';});sd+='</row>';});const sheet='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetViews><sheetView workbookViewId="0" showGridLines="0"><pane xSplit="1" topLeftCell="B1" activePane="topRight" state="frozen"/></sheetView></sheetViews><sheetFormatPr defaultRowHeight="15"/><cols><col min="1" max="1" width="44" customWidth="1"/><col min="2" max="'+Math.max(2,nc)+'" width="12.5" customWidth="1"/></cols><sheetData>'+sd+'</sheetData>'+(mg.length?'<mergeCells count="'+mg.length+'">'+mg.map(m=>'<mergeCell ref="'+CL(m[1])+m[0]+':'+CL(m[2])+m[0]+'"/>').join("")+'</mergeCells>':'')+'<pageSetup orientation="landscape" fitToWidth="1" fitToHeight="0"/></worksheet>';return [sheet,tb0?tb0.textContent:"Tablero"];}
+function estilosXlsx(){const F=(sz,c,b,n)=>'<font>'+(b?'<b/>':'')+'<sz val="'+sz+'"/><color rgb="FF'+c+'"/><name val="'+(n||'Arial')+'"/></font>';const fonts=[F(10,'1F2937'),F(15,'051C2C',0,'Georgia'),F(9,'5E6E7E'),F(10,'FFFFFF',1),F(10,'051C2C',1),F(12,'051C2C',0,'Georgia'),F(10,'33475B')];const fl=c=>'<fill><patternFill patternType="solid"><fgColor rgb="FF'+c+'"/><bgColor indexed="64"/></patternFill></fill>';const fills=['<fill><patternFill patternType="none"/></fill>','<fill><patternFill patternType="gray125"/></fill>',fl('2251FF'),fl('00A9F4'),fl('051C2C'),fl('5E6E7E'),fl('F0F3FA')];const bd=(t,b)=>'<border><left/><right/>'+(t?'<top style="'+t[0]+'"><color rgb="FF'+t[1]+'"/></top>':'<top/>')+(b?'<bottom style="'+b[0]+'"><color rgb="FF'+b[1]+'"/></bottom>':'<bottom/>')+'<diagonal/></border>';const borders=[bd(),bd(null,['thin','EEF0F3']),bd(['thin','051C2C']),bd(null,['medium','051C2C']),bd(null,['thin','051C2C'])];const AC='<alignment horizontal="center" vertical="center" wrapText="1"/>',AL='<alignment horizontal="left" vertical="center"/>',AI='<alignment horizontal="left" vertical="center" indent="1"/>';const xf=(nf,fo,fi,bo,al)=>'<xf numFmtId="'+nf+'" fontId="'+fo+'" fillId="'+fi+'" borderId="'+bo+'" xfId="0" applyNumberFormat="1" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1">'+(al||'')+'</xf>';const xfs=[xf(0,0,0,0),xf(0,1,0,0,AL),xf(0,2,0,0,AL),xf(0,5,0,0,AL),xf(0,0,0,0),xf(0,3,2,0,AC),xf(0,3,3,0,AC),xf(0,3,4,0,AC),xf(0,3,5,0,AC),xf(0,4,0,3,AC),xf(0,4,0,3,AL),xf(0,6,0,1,AL),xf(164,6,0,1),xf(165,6,0,1),xf(166,6,0,1),xf(0,4,0,2,AL),xf(164,4,0,2),xf(165,4,0,2),xf(166,4,0,2),xf(0,4,6,4,AL),xf(164,4,6,4),xf(165,4,6,4),xf(166,4,6,4),xf(0,6,0,1,AI)];return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><numFmts count="3"><numFmt numFmtId="164" formatCode="#,##0;(#,##0);&quot;-&quot;"/><numFmt numFmtId="165" formatCode="0.0%;(0.0%);&quot;-&quot;"/><numFmt numFmtId="166" formatCode="+0.0&quot; pp&quot;;-0.0&quot; pp&quot;;&quot;-&quot;"/></numFmts><fonts count="'+fonts.length+'">'+fonts.join('')+'</fonts><fills count="'+fills.length+'">'+fills.join('')+'</fills><borders count="'+borders.length+'">'+borders.join('')+'</borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="'+xfs.length+'">'+xfs.join('')+'</cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>';}
+function archivosXlsx(){const r=xlsxModalidades();if(!r)return null;const sn=r[1].replace(/[\\\/\?\*\[\]:]/g," ").slice(0,31).replace(/&/g,"&amp;");return [['[Content_Types].xml','<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>'],['_rels/.rels','<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>'],['xl/workbook.xml','<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="'+sn+'" sheetId="1" r:id="rId1"/></sheets></workbook>'],['xl/_rels/workbook.xml.rels','<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>'],['xl/styles.xml',estilosXlsx()],['xl/worksheets/sheet1.xml',r[0]]];}
+function descargar(){const fs=archivosXlsx();if(!fs){alert("No hay tablas para descargar en esta pestaña.");return;}const b=new Blob([zipArchivos(fs)],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});const u=URL.createObjectURL(b);const a=document.createElement("a");const tb0=document.querySelector(".tabs button.active");a.href=u;a.download="PyG_Modalidades_"+String(tb0?tb0.textContent:"Tablero").replace(/[^A-Za-z0-9\u00C0-\u017F]+/g,"_").replace(/^_|_$/g,"")+".xlsx";document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(u);a.remove();},500);}
+</script>
+</body></html>
