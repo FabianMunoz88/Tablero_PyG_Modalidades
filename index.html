@@ -175,7 +175,7 @@ const MES = [
 [11000,0,0,0,0,0,0,0,0],
 [12000,0,0,0,0,0,0,0,0]
 ];
-S.forEach(s=>s.rows.forEach(r=>{r.v=r.v.map(x=>x/1000000);}));
+S.forEach(s=>s.rows.forEach(r=>{r.v=r.v.map(x=>x/1000000);}));S.forEach(s=>{s.title=String(s.title).replace(/^\d+[a-z]?\.\s*/,"");});
 const MODS=["Distancia","Presencial","Virtual","Total"];
 const COL={Distancia:"#2251FF",Presencial:"#00A9F4",Virtual:"#051C2C",Total:"#5E6E7E"};
 const nf=new Intl.NumberFormat("es-CO",{maximumFractionDigits:0});
